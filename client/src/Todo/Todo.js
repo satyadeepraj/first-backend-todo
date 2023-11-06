@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import axios from "axios";
 
 export default function Todo({ api }) {
   const [textinput, settextInput] = useState("");
-  const [todo, setTodo] = useState([]);
+  const [updateInput, setUpdateInput] = useState("");
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
 
+  
   const handleAdd = async () => {
     const Tasks = await axios.post("http://localhost:8000/form", {
       task: textinput,
@@ -12,15 +14,39 @@ export default function Todo({ api }) {
     console.log(Tasks);
     settextInput("");
   };
-  const handleDelete = (index) => {
-    const updatedTodos = [...todo];
-    updatedTodos.splice(index, 1);
-    setTodo(updatedTodos);
+
+  const handleDelete = async (taskId) => {
+    try {
+      await axios.delete(`http://localhost:8000/delete?id=${taskId}`);
+      
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+    
   };
+  const handleEdit = (taskId) => {
+    const taskToUpdate = api.find((task) => task._id === taskId);
+    setUpdateInput(taskToUpdate.task);
+    setSelectedTaskId(taskId);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      await axios.put(`http://localhost:8000/update?id=${selectedTaskId}`, {
+        task: updateInput,
+      });
+      setUpdateInput("");
+      setSelectedTaskId(null);
+      
+    } catch (error) {
+      console.error("Error updating task:", error);
+    }
+  };
+
   if (api) {
     return (
       <div>
-        <h1>Todo-App</h1>
+        <h1>Todo-App-By Satya</h1>
         <form onSubmit={handleAdd}>
           <div>
             <input
@@ -33,11 +59,23 @@ export default function Todo({ api }) {
         <div>
           <h1>Tasks :-</h1>
           <ul>
-            {api.map((task, index) => (
-              <li key={index}>
-                {task.task}
-
-                <button onClick={() => handleDelete(index)}>Delete</button>
+            {api.map((task) => (
+              <li key={task._id}>
+                {selectedTaskId === task._id ? (
+                <div>
+                  <input
+                    value={updateInput}
+                    onChange={(e) => setUpdateInput(e.target.value)}
+                  />
+                  <button onClick={handleUpdate}>Update</button>
+                </div>
+              ) : (
+                <div>
+                  {task.task}
+                  <button onClick={() => handleEdit(task._id)}>Edit</button>
+                  <button onClick={() => handleDelete(task._id)}>Delete</button>
+                </div>
+              )}
               </li>
             ))}
           </ul>

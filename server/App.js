@@ -18,14 +18,43 @@ async function main() {
   app.use(cors());
   app.use(express.json());
 
-  app.get("/",async (req, res) => {
-    const tasks= await TASK.find()
-    console.log(tasks)
+  app.get("/", async (req, res) => {
+    const tasks = await TASK.find();
+
     res.json(tasks);
   });
 
   app.post("/form", async (req, res) => {
     const task = await TASK.create(req.body);
+  });
+
+  app.delete("/delete", async (req, res) => {
+    console.log("====================================");
+    console.log(req.query);
+    console.log("====================================");
+    await TASK.findByIdAndRemove({ _id: req.query.id });
+  });
+
+  app.put("/update", async (req, res) => {
+    const taskId = req.query.id;
+    const updatedTaskText = req.body.task;
+
+    try {
+      const updatedTask = await TASK.findByIdAndUpdate(
+        taskId,
+        { task: updatedTaskText },
+        { new: true }
+      );
+
+      if (!updatedTask) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+
+      res.json(updatedTask);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
   });
 
   app.listen(port, () => {
